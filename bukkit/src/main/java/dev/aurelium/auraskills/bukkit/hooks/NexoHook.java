@@ -10,11 +10,19 @@ import com.nexomc.nexo.utils.drops.Drop;
 import com.nexomc.nexo.utils.drops.Loot;
 import dev.aurelium.auraskills.api.source.type.BlockXpSource.BlockXpSourceState;
 import dev.aurelium.auraskills.bukkit.AuraSkills;
+import dev.aurelium.auraskills.bukkit.requirement.blocks.BlockRequirement;
+import dev.aurelium.auraskills.bukkit.requirement.blocks.RequirementNode;
 import dev.aurelium.auraskills.bukkit.source.BlockLeveler;
+import dev.aurelium.auraskills.common.config.Option;
 import dev.aurelium.auraskills.common.hooks.Hook;
+import dev.aurelium.auraskills.common.hooks.PlaceholderHook;
 import dev.aurelium.auraskills.common.source.SourceTypes;
 import dev.aurelium.auraskills.common.source.type.BlockSource;
 import dev.aurelium.auraskills.common.source.type.BlockSource.BlockSourceState;
+import dev.aurelium.auraskills.common.user.User;
+import dev.aurelium.slate.text.TextFormatter;
+import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
@@ -45,22 +53,18 @@ public class NexoHook extends Hook implements Listener {
         return NexoHook.class;
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onNoteBlockPlace(NexoNoteBlockPlaceEvent event) {
         Block block = event.getBlock();
         plugin.getRegionManager().handleBlockPlace(block);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onNoteBlockBreak(NexoNoteBlockBreakEvent event) {
-        Player player = event.getPlayer();
-        Block block = event.getBlock();
-
-        // Lazy initialize BlockLeveler
         if (blockLeveler == null) {
             blockLeveler = plugin.getLevelManager().getLeveler(BlockLeveler.class);
         }
-        blockLeveler.handleBreak(player, block, event, trait -> getUniqueNexoDrops(player, event.getDrop()));
+        blockLeveler.handleBreak(event.getPlayer(), event.getBlock(), event, trait -> getUniqueNexoDrops(event.getPlayer(), event.getDrop()));
     }
 
     public void registerExternalItemProvider() {
@@ -115,6 +119,7 @@ public class NexoHook extends Hook implements Listener {
     }
 
     private Set<ItemStack> getUniqueNexoDrops(Player player, Drop drop) {
+        if (drop == null) return new HashSet<>();
         Set<ItemStack> unique = new HashSet<>();
         for (Loot loot : drop.lootToDrop(player)) {
             ItemStack item = loot.getItemStack();
@@ -132,5 +137,4 @@ public class NexoHook extends Hook implements Listener {
         }
         return unique;
     }
-
 }
